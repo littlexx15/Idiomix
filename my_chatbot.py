@@ -63,11 +63,3 @@ class MyChatbot(ChatbotBase):
             else:
                 # If input doesn't seem like an idiom, prompt the user again
                 user_input = input("You: ").strip()
-
-
-if __name__ == "__main__":
-    # Instantiate and start the chatbot
-    chatbot = MyChatbot()
-    chatbot.greeting()
-    initial_input = input("You: ").strip()
-    chatbot.respond(initial_input)

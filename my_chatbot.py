@@ -24,6 +24,7 @@ class MyChatbot(ChatbotBase):
         # Initialize game variables
         self.last_idiom = None
         self.keep_playing = True
+        self.score = 0  # Initialize the score counter
 
     def greeting(self):
         """Send a greeting to the user and ask if they want to hear the game rules."""
@@ -31,8 +32,11 @@ class MyChatbot(ChatbotBase):
         self.ask_game_rules()
 
     def farewell(self):
-        """Send a farewell message and end the game."""
-        print("Idiomix: Thanks for playing! See you next time!")
+        """Send a farewell message and end the game with score and rating."""
+        print("Idiomix: Thanks for playing! Here's how you did:")
+        print(f"Idiomix: Your total score is: {self.score}")
+        rating = self.calculate_rating()
+        print(f"Idiomix: {rating}")
 
     def ask_game_rules(self):
         """Display the game rules or skip to starting the game."""
@@ -40,11 +44,12 @@ class MyChatbot(ChatbotBase):
         user_response = input("You: ").strip().lower()
         if user_response in ["yes", "sure", "yeah", "of course"]:
             print(
-                "Idiomix: It's simple! Type an idiom or phrase, and I'll reply with one that starts "
-                "with the last letter of yours. "
-                "If you're stuck, type 'hint' for help or 'skip' to move on. "
-                "Oh, and I can also explain the meaning of idioms if you're curious! "
-                "Ready? Start by typing your first idiom!"
+                 "Idiomix: Here's how we play:\n"
+            "- Type an idiom or phrase, and I'll respond with one that starts with the last letter of yours.\n"
+            "- If you're unsure, type 'hint' for a clue, or 'skip' to pass.\n"
+            "- You can also ask me to explain the meaning of any idiom I use!\n"
+            "- Every correct idiom earns you a point, and your final score will give you a rating.\n"
+            "Ready to test your idiom skills? Let's begin!"
             )
         else:
             print("Idiomix: Great! Let's get started. Type your first idiom!")
@@ -90,7 +95,7 @@ class MyChatbot(ChatbotBase):
         - Validate if input is a valid idiom
         """
         # Expanded hint detection
-        hint_keywords = ["help me", "don't know", "can you help", "how to do", "hint"]
+        hint_keywords = ["help me", "don't know", "can you help", "how to", "hint", "what should"]
         if any(keyword in user_input.lower() for keyword in hint_keywords):
             return "hint"
 
@@ -129,7 +134,7 @@ class MyChatbot(ChatbotBase):
 
     def check_exit_request(self, user_input):
         """Check if the user wants to quit the game."""
-        exit_keywords = ["give up", "stop playing", "quit", "i don't want to play", "i want to give up"]
+        exit_keywords = ["give up", "stop playing", "quit", "i don't want to play", "i want to give up", "want to end"]
         user_input_lower = user_input.lower().strip()
 
         # Avoid matching "never give up"
@@ -141,7 +146,7 @@ class MyChatbot(ChatbotBase):
     def check_explanation_request(self, user_input):
         """Check if the user is asking for an explanation of an idiom."""
         explanation_keywords = [
-            "what does", "mean", "explain", "definition",
+            "what does", "mean", "explain", "definition", "what's that"
             "what is the meaning", "what is that mean", "meaning of"
         ]
         user_input_lower = user_input.lower()
@@ -179,6 +184,17 @@ class MyChatbot(ChatbotBase):
             return selected_idiom
         return None
 
+    def calculate_rating(self):
+        """Calculate the rating based on the score."""
+        if self.score <= 2:
+            return "Beginner player! Keep trying and learn more idioms."
+        elif 3 <= self.score <= 5:
+            return "Skilled player! You're getting the hang of idioms."
+        elif 6 <= self.score <= 9:
+            return "Excellent player! You're an idiom master."
+        else:
+            return "Grandmaster player! Your idiom skills are unbeatable!"
+
     def respond(self, user_input):
         """
         Main game loop: process user input and generate responses.
@@ -211,6 +227,7 @@ class MyChatbot(ChatbotBase):
             if result:
                 response = self.generate_response(result)
                 if response:
+                    self.score += 1  # Increase the score for a valid idiom
                     print(f"Idiomix: {response}")
                     user_input = input("You: ").strip()
                 else:

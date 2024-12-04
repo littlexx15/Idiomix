@@ -1,6 +1,7 @@
 import pandas as pd
 import random
 import spacy
+import re
 from chatbot_base import ChatbotBase
 
 class MyChatbot(ChatbotBase):
@@ -44,12 +45,12 @@ class MyChatbot(ChatbotBase):
         user_response = input("You: ").strip().lower()
         if user_response in ["yes", "sure", "yeah", "of course"]:
             print(
-                 "Idiomix: Here's how we play:\n"
-            "- Type an idiom or phrase, and I'll respond with one that starts with the last letter of yours.\n"
-            "- If you're unsure, type 'hint' for a clue, or 'skip' to pass.\n"
-            "- You can also ask me to explain the meaning of any idiom I use!\n"
-            "- Every correct idiom earns you a point, and your final score will give you a rating.\n"
-            "Ready to test your idiom skills? Let's begin!"
+                "Idiomix: Here's how we play:\n"
+                "- Type an idiom or phrase, and I'll respond with one that starts with the last letter of yours.\n"
+                "- If you're unsure, type 'hint' for a clue, or 'skip' to pass.\n"
+                "- You can also ask me to explain the meaning of any idiom I use!\n"
+                "- Every correct idiom earns you a point, and your final score will give you a rating.\n"
+                "Ready to test your idiom skills? Let's begin!"
             )
         else:
             print("Idiomix: Great! Let's get started. Type your first idiom!")
@@ -68,22 +69,38 @@ class MyChatbot(ChatbotBase):
         """
         Detect if emotional keywords are targeting the chatbot or the game.
         - Uses predefined emotional keywords and target terms.
+        - Utilizes regex for improved detection accuracy.
         """
-        emotional_keywords = {
-            "positive": ["love", "like", "enjoy", "funny", "interesting"],
-            "negative": ["hate", "dislike", "annoyed", "bored", "boring", "frustrating"]
+        emotional_patterns = {
+            "positive": r"\b(love|like|enjoy|funny|interesting)\b",
+            "negative": r"\b(hate|dislike|annoyed|bored|boring|frustrating)\b"
         }
-        bot_related_terms = ["you", "this game", "chatbot", "conversation", "the game"]
+        target_patterns = r"\b(you|this game|chatbot|conversation|the game)\b"
+
         user_input_lower = user_input.lower()
 
-        # Check for emotional keywords targeting the bot or game
-        for sentiment, keywords in emotional_keywords.items():
-            for keyword in keywords:
-                if keyword in user_input_lower:
-                    for target in bot_related_terms:
-                        if target in user_input_lower:
-                            return sentiment  # Return the sentiment type (positive/negative)
+        for sentiment, emotion_pattern in emotional_patterns.items():
+            if re.search(emotion_pattern, user_input_lower):
+                if re.search(target_patterns, user_input_lower):
+                    return sentiment
         return None
+
+    def handle_emotion_response(self, sentiment):
+        """
+        Respond to emotional feedback and decide whether to continue or end the game.
+        """
+        if sentiment == "negative":
+            print("Idiomix: Oh no, I'm sorry you feel that way. Want to try another round?")
+            user_response = input("You: ").strip().lower()
+            if user_response in ["yes", "sure", "yeah", "of course"]:
+                print("Idiomix: Great! Let's keep playing!")
+                return True
+            else:
+                self.farewell()
+                return False
+        elif sentiment == "positive":
+            print("Idiomix: Aww, that's so kind of you! Thank you! Let's keep playing!")
+            return True
 
     def process_input(self, user_input, required_letter=None):
         """
@@ -94,63 +111,34 @@ class MyChatbot(ChatbotBase):
         - Detect emotional expressions
         - Validate if input is a valid idiom
         """
-        # Expanded hint detection
-        hint_keywords = ["help me", "don't know", "can you help", "how to", "hint", "what should"]
-        if any(keyword in user_input.lower() for keyword in hint_keywords):
-            return "hint"
-
-        # Expanded skip detection
-        skip_keywords = ["change another one", "skip this", "move on", "can we change", "skip"]
-        if any(keyword in user_input.lower() for keyword in skip_keywords):
-            return "skip"
-
-        if self.check_exit_request(user_input):
-            self.farewell()
-            self.keep_playing = False
-            return None
-
-        if self.check_explanation_request(user_input):
-            self.explain_idiom()
+        if not user_input.strip():
+            print("Idiomix: Hmm, I didn't hear anything. Try typing something!")
             return None
 
         sentiment = self.detect_emotional_target(user_input)
         if sentiment:
-            if sentiment == "positive":
-                print("Idiomix: Aww, that's so kind of you! Thank you! Let's keep playing!")
-            elif sentiment == "negative":
-                print("Idiomix: Oh no, I'm sorry you feel that way. Want to try another round?")
-                follow_up = input("You: ").strip().lower()
-                if follow_up in ["yes", "sure", "okay", "of course"]:
-                    print("Idiomix: Great! Let's continue!")
-                else:
-                    self.farewell()
-                    self.keep_playing = False
+            self.keep_playing = self.handle_emotion_response(sentiment)
+            return None
+
+        if re.search(r"(how to|what should|hint|help me|can you help)", user_input.lower()):
+            return "hint"
+
+        if re.search(r"(skip|change|move on|can we change)", user_input.lower()):
+            return "skip"
+
+        if re.search(r"(quit|give up|stop playing|want to end|leave)", user_input.lower()):
+            self.farewell()
+            self.keep_playing = False
+            return None
+
+        if re.search(r"(explain|define|meaning|what does|what is|what's that)", user_input.lower()):
+            self.explain_idiom()
             return None
 
         is_valid_idiom = self.check_user_input(user_input, required_letter)
         if not is_valid_idiom:
             return None
         return user_input.strip()[-1].lower()
-
-    def check_exit_request(self, user_input):
-        """Check if the user wants to quit the game."""
-        exit_keywords = ["give up", "stop playing", "quit", "i don't want to play", "i want to give up", "want to end"]
-        user_input_lower = user_input.lower().strip()
-
-        # Avoid matching "never give up"
-        if "never give up" in user_input_lower or "don't give up" in user_input_lower:
-            return False
-
-        return any(keyword in user_input_lower for keyword in exit_keywords)
-
-    def check_explanation_request(self, user_input):
-        """Check if the user is asking for an explanation of an idiom."""
-        explanation_keywords = [
-            "what does", "mean", "explain", "definition", "what's that"
-            "what is the meaning", "what is that mean", "meaning of"
-        ]
-        user_input_lower = user_input.lower()
-        return any(keyword in user_input_lower for keyword in explanation_keywords)
 
     def check_user_input(self, user_input, required_letter=None):
         """
@@ -227,7 +215,7 @@ class MyChatbot(ChatbotBase):
             if result:
                 response = self.generate_response(result)
                 if response:
-                    self.score += 1  # Increase the score for a valid idiom
+                    self.score += 1
                     print(f"Idiomix: {response}")
                     user_input = input("You: ").strip()
                 else:

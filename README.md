@@ -1,4 +1,21 @@
 
+# Idiomix
+
+**Idiomix** is a simple terminal-based chatbot game where users play an idiom relay challenge. It responds with English idioms based on user input, tracks scores, and helps expand your idiom vocabulary through fun interaction.
+
+## Demo Preview
+
+Here are some demo screenshots of the chatbot in action:
+
+### 1. Greeting and Rule Explanation
+![Greeting and Rules](images/greeting_demo.gif)
+
+### 2. Idiom Chain Example
+![Idiom Game](images/idiom_chain_demo.gif)
+
+### 3. Score and Rating After Game
+![Score Summary](images/game_score_demo.gif)
+
 # Install and run
 
 ## 1. Create and activate a virtual environment
